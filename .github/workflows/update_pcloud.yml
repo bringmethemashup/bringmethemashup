@@ -1,0 +1,35 @@
+name: Update pCloud Track List
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 6am UTC
+  workflow_dispatch:       # Also allows manual trigger from GitHub
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run pCloud fetcher
+        env:
+          PCLOUD_USERNAME: ${{ secrets.PCLOUD_USERNAME }}
+          PCLOUD_PASSWORD: ${{ secrets.PCLOUD_PASSWORD }}
+        run: python fetch_pcloud.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add pcloud_tracks.js
+          git diff --staged --quiet || git commit -m "Auto-update pCloud track list"
+          git push
